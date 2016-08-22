@@ -1,2 +1,3 @@
-# azure-templates
-Azure template to easily deploy Stormshield appliances
+# Stormshield Azure templates
+
+Azure templates to easily deploy Stormshield appliances
