@@ -8,6 +8,3 @@ This Azure Resource Manager template deploys a SNS VM and configure a DMZ subnet
 
 [![Visualize](http://armviz.io/visualizebutton.png)](http://armviz.io/#/?load=https://raw.githubusercontent.com/remip2/azure-templates/sns/sns-simple/template.json")
 
-
-
-remip2%2Fazure-templates%2Fsns%2Fsns-simple%2Ftemplate.json

@@ -2,32 +2,29 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "virtualMachines_sns_gateway_adminPassword": {
+        "SNSAdminPassword": {
             "value": null
         },
-        "virtualMachines_sns_gateway_name": {
-            "value": null
+        "SNSName": {
+            "value": "sns-gateway"
         },
-        "networkInterfaces_sns_gateway_name": {
-            "value": null
+        "SNSIfName": {
+            "value": "sns-gateway-nic"
         },
-        "networkSecurityGroups_sns_gateway_name": {
-            "value": null
+        "SGName": {
+            "value": "security-group"
         },
-        "publicIPAddresses_sns_gateway_name": {
-            "value": null
+        "PublicIpName": {
+            "value": "sns-gateway-public-ip"
         },
-        "routeTables_RouteTableDMZ_name": {
-            "value": null
+        "RouteTableName": {
+            "value": "route-table-dmz"
         },
-        "virtualNetworks_sns_demo_name": {
-            "value": null
+        "VnetName": {
+            "value": "virtual-network"
         },
-        "storageAccounts_snsdemo_name": {
-            "value": null
-        },
-        "location" : {
-        	"value": null
-        }	
+        "StorageAccountName": {
+            "value": "sns-simple-4035"
+        }
     }
 }

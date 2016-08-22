@@ -2,52 +2,53 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "virtualMachines_sns_gateway_adminPassword": {
+        "SNSAdminPassword": {
             "defaultValue": null,
             "type": "SecureString"
-        }
-        "virtualMachines_sns_gateway_name": {
+        },
+        "SNSName": {
             "defaultValue": "sns-gateway",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the SNS virtual machine" }
         },
-        "networkInterfaces_sns_gateway_name": {
+        "SNSIfName": {
             "defaultValue": "sns-gateway-nic",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the SNS VM network interface" }
         },
-        "networkSecurityGroups_sns_gateway_name": {
+        "SGName": {
             "defaultValue": "security-group",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the security group" }
         },
-        "publicIPAddresses_sns_gateway_name": {
+        "PublicIpName": {
             "defaultValue": "sns-gateway-public-ip",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the Public IP" }
         },
-        "routeTables_RouteTableDMZ_name": {
+        "RouteTableName": {
             "defaultValue": "route-table-dmz",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the route table" }
         },
-        "virtualNetworks_sns_demo_name": {
+        "VnetName": {
             "defaultValue": "virtual-network",
-            "type": "String"
+            "type": "String",
+            "metadata": { "description": "Name of the virtual network" }
         },
-        "storageAccounts_snsdemo_name": {
+        "StorageAccountName": {
             "defaultValue": "sns-simple-4035",
-            "type": "String"
-        },
-        "location": {
-            "defaultValue": "westeurope",
-            "type": "String"
-        },
-        
+            "type": "String",
+            "metadata": { "description": "Name of the storage account" }
+        }
     },
     "variables": {},
     "resources": [
         {
             "comments": "SNS VM",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('virtualMachines_sns_gateway_name')]",
+            "name": "[parameters('SNSName')]",
             "apiVersion": "2015-06-15",
-            "location": "[parameters('location')]",
             "plan": {
                 "name": "byol-single-instance",
                 "product": "stormshield-network-security-for-cloud",
@@ -65,44 +66,43 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[parameters('virtualMachines_sns_gateway_name')]",
+                        "name": "[parameters('SNSName')]",
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat('http', '://', parameters('storageAccounts_snsdemo4035_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_sns_gateway_name'),'.vhd'))]"
+                            "uri": "[concat('http', '://', parameters('storageAccounts_snsdemo4035_name'), '.blob.core.windows.net', concat('/vhds/', parameters('SNSName'),'.vhd'))]"
                         },
                         "caching": "ReadWrite"
                     },
                     "dataDisks": []
                 },
                 "osProfile": {
-                    "computerName": "[parameters('virtualMachines_sns_gateway_name')]",
+                    "computerName": "[parameters('SNSName')]",
                     "adminUsername": "not_important",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": false
                     },
                     "secrets": [],
-                    "adminPassword": "[parameters('virtualMachines_sns_gateway_adminPassword')]"
+                    "adminPassword": "[parameters('SNSAdminPassword')]"
                 },
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_sns_gateway_name'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('SNSIfName'))]"
                         }
                     ]
                 }
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_snsdemo_name'))]",
-                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_sns_gateway_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('SNSIfName'))]"
             ]
         },
         {
             "comments": "SNS VM nic",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[parameters('networkInterfaces_sns_gateway_name')]",
+            "name": "[parameters('SNSIfName')]",
             "apiVersion": "2016-03-30",
-            "location": "[parameters('location')]",
             "properties": {
                 "ipConfigurations": [
                     {
@@ -111,10 +111,10 @@
                             "privateIPAddress": "10.1.0.4",
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_sns_gateway_name'))]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('PublicIpName'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_sns_demo_name')), '/subnets/default')]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName')), '/subnets/default')]"
                             }
                         }
                     }
@@ -129,8 +129,8 @@
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_sns_gateway_name'))]",
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_sns_demo_name'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('PublicIpName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_sns_gateway_name'))]"
             ]
         },
@@ -139,7 +139,6 @@
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "[parameters('networkSecurityGroups_sns_gateway_name')]",
             "apiVersion": "2016-03-30",
-            "location": "[parameters('location')]",
             "tags": {},
             "properties": {
                 "securityRules": [
@@ -203,9 +202,8 @@
         {
             "comments": "SNS VM public IP",
             "type": "Microsoft.Network/publicIPAddresses",
-            "name": "[parameters('publicIPAddresses_sns_gateway_name')]",
+            "name": "[parameters('PublicIpName')]",
             "apiVersion": "2016-03-30",
-            "location": "[parameters('location')]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "idleTimeoutInMinutes": 4
@@ -216,9 +214,8 @@
         {
             "comments": "Route table for the DMZ",
             "type": "Microsoft.Network/routeTables",
-            "name": "[parameters('routeTables_RouteTableDMZ_name')]",
+            "name": "[parameters('RouteTableName')]",
             "apiVersion": "2016-03-30",
-            "location": "[parameters('location')]",
             "properties": {
                 "routes": [
                     {
@@ -237,9 +234,8 @@
         {
             "comments": "VNET",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('virtualNetworks_sns_demo_name')]",
+            "name": "[parameters('VnetName')]",
             "apiVersion": "2016-03-30",
-            "location": "[parameters('location')]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -261,7 +257,7 @@
                         "properties": {
                             "addressPrefix": "10.1.1.0/24",
                             "routeTable": {
-                                "id": "[resourceId('Microsoft.Network/routeTables', parameters('routeTables_RouteTableDMZ_name'))]"
+                                "id": "[resourceId('Microsoft.Network/routeTables', parameters('RouteTableName'))]"
                             }
                         }
                     }
@@ -269,7 +265,7 @@
             },
             "resources": [],
             "dependsOn": [
-                "[resourceId('Microsoft.Network/routeTables', parameters('routeTables_RouteTableDMZ_name'))]"
+                "[resourceId('Microsoft.Network/routeTables', parameters('RouteTableName'))]"
             ]
         },
         {
@@ -280,9 +276,8 @@
                 "tier": "Standard"
             },
             "kind": "Storage",
-            "name": "[parameters('storageAccounts_snsdemo_name')]",
+            "name": "[parameters('StorageAccountName')]",
             "apiVersion": "2016-01-01",
-            "location": "[parameters('location')]",
             "tags": {},
             "properties": {},
             "resources": [],
