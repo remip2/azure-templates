@@ -8,10 +8,12 @@
 
 This Azure Resource Manager template deploys a SNS VM and configure a DMZ subnet.
 
+
+* The virtual network has a public subnet facing Internet and a private subnet for servers
+* A route table is created to route trafic from the private network through the SNS appliance
+
 <img src="img/topo-simple.png" alt="network topology">
 
-* The virtual network as a public subnet facing Internet and a private subnet
-* A route table is created to route trafic from the private network through the SNS appliance
 
 ## Next configuration steps:
 
