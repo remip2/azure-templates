@@ -1,4 +1,4 @@
 # Stormshield Network Security Azure templates
 
-* Simple virtual network with a dmz
+* sns-simple: simple virtual network with a dmz
 
