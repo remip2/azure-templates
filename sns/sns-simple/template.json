@@ -2,9 +2,40 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "SNSAdminPassword": {
+    	"SNSAdminPassword": {
             "defaultValue": null,
-            "type": "SecureString"
+            "type": "SecureString",
+            "metadata": { "description": "Administration password of the SNS" }
+        },
+    	"VnetName": {
+            "defaultValue": "virtual-network",
+            "type": "String",
+            "metadata": { "description": "Name of the virtual network" }
+        },
+        "VnetPrefix": {
+        	"type": "string",
+        	"defaultValue": "192.168.0.0/16",
+        	"metadata": { "description": "Virtual network address CIDR" }
+        },
+        "PublicSubnetName": {
+        	"type": "string",
+        	"defaultValue": "Public",
+        	"metadata": { "description": "Public subnet name" }
+        },
+        "PublicSubnetPrefix": {
+        	"type": "string",
+        	"defaultValue": "192.168.0.0/24",
+        	"metadata": { "description": "Public subnet CIDR" }
+        },
+        "PrivateSubnetName": {
+        	"type": "string",
+        	"defaultValue": "Private",
+        	"metadata": { "description": "Private subnet name" }
+        },
+        "PrivateSubnetPrefix": {
+        	"type": "string",
+        	"defaultValue": "192.168.1.0/24",
+        	"metadata": { "description": "Private subnet CIDR" }
         },
         "SNSName": {
             "defaultValue": "sns-gateway",
@@ -15,6 +46,16 @@
             "defaultValue": "sns-gateway-nic",
             "type": "String",
             "metadata": { "description": "Name of the SNS VM network interface" }
+        },
+        "SNSIfIP": {
+            "defaultValue": "192.168.0.100",
+            "type": "String",
+            "metadata": { "description": "IP address of the SNS VM" }
+        },
+        "VmSize": {
+            "defaultValue": "Standard_A1",
+            "type": "String",
+            "metadata": { "description": "Azure VM Size" }
         },
         "SGName": {
             "defaultValue": "security-group",
@@ -27,17 +68,12 @@
             "metadata": { "description": "Name of the Public IP" }
         },
         "RouteTableName": {
-            "defaultValue": "route-table-dmz",
+            "defaultValue": "route-table-private",
             "type": "String",
-            "metadata": { "description": "Name of the route table" }
-        },
-        "VnetName": {
-            "defaultValue": "virtual-network",
-            "type": "String",
-            "metadata": { "description": "Name of the virtual network" }
+            "metadata": { "description": "Name of the Private subnet route table" }
         },
         "StorageAccountName": {
-            "defaultValue": "sns-simple-4035",
+            "defaultValue": "[concat('snssimple', uniqueString(resourceGroup().id))]",
             "type": "String",
             "metadata": { "description": "Name of the storage account" }
         }
@@ -49,6 +85,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[parameters('SNSName')]",
             "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
             "plan": {
                 "name": "byol-single-instance",
                 "product": "stormshield-network-security-for-cloud",
@@ -56,7 +93,7 @@
             },
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "Standard_A1"
+                    "vmSize": "[parameters('VmSize')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -69,7 +106,7 @@
                         "name": "[parameters('SNSName')]",
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat('http', '://', parameters('storageAccounts_snsdemo4035_name'), '.blob.core.windows.net', concat('/vhds/', parameters('SNSName'),'.vhd'))]"
+                            "uri": "[concat('http', '://', parameters('StorageAccountName'), '.blob.core.windows.net', concat('/vhds/', parameters('SNSName'),'.vhd'))]"
                         },
                         "caching": "ReadWrite"
                     },
@@ -103,18 +140,19 @@
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[parameters('SNSIfName')]",
             "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "ipConfigurations": [
                     {
                         "name": "ipconfig1",
                         "properties": {
-                            "privateIPAddress": "10.1.0.4",
-                            "privateIPAllocationMethod": "Dynamic",
+                            "privateIPAddress": "[parameters('SNSIfIP')]",
+                            "privateIPAllocationMethod": "Static",
                             "publicIPAddress": {
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('PublicIpName'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName')), '/subnets/default')]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName')), '/subnets/public')]"
                             }
                         }
                     }
@@ -124,21 +162,22 @@
                 },
                 "enableIPForwarding": true,
                 "networkSecurityGroup": {
-                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_sns_gateway_name'))]"
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('SGName'))]"
                 }
             },
             "resources": [],
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', parameters('PublicIpName'))]",
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('VnetName'))]",
-                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_sns_gateway_name'))]"
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('SGName'))]"
             ]
         },
         {
             "comments": "Security group",
             "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "[parameters('networkSecurityGroups_sns_gateway_name')]",
+            "name": "[parameters('SGName')]",
             "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
             "tags": {},
             "properties": {
                 "securityRules": [
@@ -204,6 +243,7 @@
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[parameters('PublicIpName')]",
             "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "publicIPAllocationMethod": "Dynamic",
                 "idleTimeoutInMinutes": 4
@@ -216,6 +256,7 @@
             "type": "Microsoft.Network/routeTables",
             "name": "[parameters('RouteTableName')]",
             "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "routes": [
                     {
@@ -223,7 +264,7 @@
                         "properties": {
                             "addressPrefix": "0.0.0.0/0",
                             "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "10.1.0.4"
+                            "nextHopIpAddress": "[parameters('SNSIfIP')]"
                         }
                     }
                 ]
@@ -236,10 +277,11 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[parameters('VnetName')]",
             "apiVersion": "2016-03-30",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "10.1.0.0/16"
+                        "[parameters('VnetPrefix')]"
                     ]
                 },
                 "dhcpOptions": {
@@ -249,13 +291,13 @@
                     {
                         "name": "public",
                         "properties": {
-                            "addressPrefix": "10.1.0.0/24"
+                            "addressPrefix": "[parameters('PublicSubnetPrefix')]"
                         }
                     },
                     {
                         "name": "dmz",
                         "properties": {
-                            "addressPrefix": "10.1.1.0/24",
+                            "addressPrefix": "[parameters('PrivateSubnetPrefix')]",
                             "routeTable": {
                                 "id": "[resourceId('Microsoft.Network/routeTables', parameters('RouteTableName'))]"
                             }
@@ -278,10 +320,11 @@
             "kind": "Storage",
             "name": "[parameters('StorageAccountName')]",
             "apiVersion": "2016-01-01",
+            "location": "[resourceGroup().location]",
             "tags": {},
             "properties": {},
             "resources": [],
             "dependsOn": []
-        }
+        },
     ]
 }
